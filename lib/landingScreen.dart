@@ -1,6 +1,10 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:khaata/landingScreen.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'dataClass.dart';
+import 'history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -15,6 +19,8 @@ class _LandingScreenState extends State<LandingScreen> {
 
   late String date =
       '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
+  // var sDate = selectedDate;
+  // String dateString = date;
 
   // final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   // late Future<int> _counter;
@@ -31,7 +37,9 @@ class _LandingScreenState extends State<LandingScreen> {
     controllerSt = TextEditingController();
     controllerEnd = TextEditingController();
 
+    getListTest();
     getData();
+    // getList();
   }
 
   @override
@@ -196,7 +204,13 @@ class _LandingScreenState extends State<LandingScreen> {
                     lastDate: DateTime(3000),
                   );
                   if (newDate == null) return;
-                  setState(() => selectedDate = newDate);
+                  setState(() {
+                    selectedDate = newDate;
+                    date =
+                        '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
+                  });
+                  dDate = date;
+                  print(dDate);
                 },
               ),
               SizedBox(
@@ -212,14 +226,20 @@ class _LandingScreenState extends State<LandingScreen> {
                         setState(() {
                           showR = calculate(petrolPString);
                           print("Rs : $showR");
+                          data.add(Cards(header: date, body: "body"));
+                          addList(data: data);
                         });
-                        Navigator.pushNamed(context, "/history", arguments: {
-                          'startReading': startRead,
-                          'finalReading': finalRead,
-                          'date': date,
-                          // '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                          'result': showR
-                        });
+
+                        print(data);
+                        // String jsonData = jsonEncode(data);
+                        // print(jsonData);
+                        controllerSt.clear();
+                        controllerEnd.clear();
+
+                        // List<String> lists = data
+                        //     .map((card) => jsonEncode(card.toJason()))
+                        //     .toList();
+                        // print(lists);
                       }),
                   ElevatedButton(
                       child: Text("CALCULATE D"),
@@ -302,10 +322,6 @@ class _LandingScreenState extends State<LandingScreen> {
     } else {
       result = diff * dieselPrice;
     }
-    // DataClass data = new DataClass(startRead, finalRead, selectedDate, result);
-    // DataClass dataObj(){
-    //   return data;
-    // }
     return result;
   }
 
@@ -316,11 +332,37 @@ class _LandingScreenState extends State<LandingScreen> {
     pref.setDouble("stock", stock);
   }
 
+  void addList({required List<Cards> data}) async {
+    var box = await Hive.openBox('box');
+    box.add(data);
+    print(box);
+    print(box.values);
+    print("data entered");
+  }
+
+  Future<List<Cards>> getList() async {
+    var box = await Hive.openBox('box');
+
+    List<Cards> data1 = box.get("box")!;
+    data = data1;
+    return data;
+  }
+
+//TODO: get data from storage!!
+  void getListTest() async {
+    var box = await Hive.openBox('box');
+    data = box.values as List<Cards>;
+    // List<Cards> data12 = box.get(data);
+    print(box.values);
+  }
+
   void getData() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     petrolPrice = pref.getDouble("petrolPrice")!;
     dieselPrice = pref.getDouble("dieselPrice")!;
     stock = pref.getDouble("stock")!;
+
+    //  jsonData = pref.getString('dataString')!;
     print(petrolPrice);
     print(dieselPrice);
     setState(() {
@@ -334,4 +376,17 @@ class _LandingScreenState extends State<LandingScreen> {
     DataClass data = DataClass(startRead, finalRead, selectedDate, showR);
     return data;
   }
+
+  String getDate() {
+    return date;
+  }
 }
+
+String dDate = _LandingScreenState().date;
+void checkDate() {
+  print(dDate);
+}
+
+List<Cards> data = [Cards(header: dDate, body: "body")];
+
+//List<String> lists = data.map((card) => jsonEncode(card.toJason())).toList();
